@@ -18,10 +18,12 @@ type host_data struct {
 }
 // Diccionario donde almacenamos las urls visitadas
 var dicc []host_data
+var results []string
 
 func main() {
     // Almacenamos la direccion inicial pasada como parametro
     var elem host_data
+    var res []string
     elem.dir = os.Args[1]
     elem.status = false
     dicc = append(dicc, elem)
@@ -31,8 +33,9 @@ func main() {
 	    body := fetch(elem.dir)
         //elem.status = true
         // Parseamos la respuesta para sacar las etiquetas href
-        parse(body)
+        res = parse(body)
     }
+    fmt.Printf("%v", res)
     //fmt.Printf("%v\n", dicc)
 }
 
@@ -49,7 +52,7 @@ func fetch(u string) []byte {
     return body
 }
 
-func parse(body []byte) {
+func parse(body []byte) []string {
     // Expresion regular para sacar las etiquetas href
     re := regexp.MustCompile(`href="http[^ ]*"`)
     // Ejecutamos la expresion regular
@@ -62,7 +65,8 @@ func parse(body []byte) {
         res := strings.Replace(str, "href=\"", "", -1)
         res = strings.Replace(res, "\"", "", -1)
         //fmt.Printf("%q\n", match[i])
-        fmt.Println(res)
+        //fmt.Println(res)
+        results = append(results, res)
     }
-
+    return results
 }
