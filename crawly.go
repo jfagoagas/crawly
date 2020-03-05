@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-    "net/url"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -19,6 +19,7 @@ func main() {
 	// Argumentos iniciales
 	flag.Parse()
 	args := flag.Args()
+	fmt.Println(args)
 	if len(args) < 1 {
 		fmt.Printf("Por favor, especifique la url\n")
 		fmt.Printf("Uso: ./crawly http://google.com\n")
@@ -58,12 +59,14 @@ func fetch(u string, cola chan string) {
 	if err != nil {
 		fmt.Sprint(err)
 	}
+
 	// Lanzamos la peticion
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("Se produjo un error leyendo la respuesta\n")
-		os.Exit(1)
+		return
 	}
+
 	// Con defer prorrogamos el cierre de la conexion hasta que la funcion acaba
 	defer resp.Body.Close()
 
