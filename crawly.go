@@ -14,6 +14,7 @@ import (
 
 // Diccionario donde almacenamos las urls visitadas
 var visited = make(map[string]bool)
+var not_vis = make([]string)
 
 func main() {
 	// Argumentos iniciales
@@ -64,6 +65,7 @@ func fetch(u string, cola chan string) {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("Se produjo un error leyendo la respuesta\n")
+		not_vis = append(not_vis, u)
 		return
 	}
 
@@ -110,6 +112,7 @@ func parse(body []byte) (res_u []string) {
 func fixUrl(href, base string) string {
 	uri, err := url.Parse(href)
 	if err != nil {
+		// Si no se consigue parsear se devuelve vacío
 		return ""
 	}
 	baseUrl, err := url.Parse(base)
