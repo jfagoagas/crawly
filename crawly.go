@@ -1,13 +1,9 @@
 package main
 
 /* TO-DO
-- Incluir una mayor concurrencia
-- n crawlers revisando n urls 
 - Exportar los resultados navegados a un fichero
 - Exportar los resultados erroneos a un fichero
-- Eliminar elementos repetidos y no revisar
 - Timeout de búsqueda
-- Revisar el filtrado de etiquetas href porque se come algunas
 */
 import (
 	"crypto/tls"
@@ -25,6 +21,7 @@ import (
 
 // Flags globales
 var url = flag.String("u", "", "URL to crawl")
+
 //var cookies = flag.String("c", "", "Cookies")
 
 // Diccionario donde almacenamos las urls visitadas
@@ -51,18 +48,38 @@ func main() {
 	/* Creamos el canal de comunicación con las gorutinas
 	   que va a ser una cola donde especificamos las urls */
 	cola := make(chan string)
+	colaFiltrada := make(chan string)
+
+	go filter(cola, colaFiltrada)
 
 	// Introducimos el elemento en la cola
 	go func() { cola <- *url }()
 
-	/* Recorremos la cola para ver sus elementos
-	   y los incluimos para que sean encolados */
-	for uri := range cola {
+	// Canal bool para sincronizar la ejecución de N crawlers concurrentes
+	done := make(chan bool)
+
+	// Sacamos los elementos a revisar de la cola filtrada y los metemos en la cola
+	for i := 0; i < 5; i++ {
+		go func() {
+			/* Recorremos la cola para ver sus elementos
+			   y los incluimos para que sean encolados */
+			for uri := range colaFiltrada {
+				fetch(uri, cola, cookie_jar)
+			}
+			done <- true
+		}()
+	}
+	<-done
+}
+
+/* Recorremos la cola para ver sus elementos
+   y los incluimos para que sean encolados */
+/*	for uri := range cola {
 		fetch(uri, cola, cookie_jar)
 	}
 	fmt.Printf("%v\n", visited)
+*/
 
-}
 func timestamp() {
 	fmt.Printf("Date: %s", time.Now().Format("02.01.2006 15:04:05\n"))
 }
@@ -79,6 +96,15 @@ func usage() {
 	fmt.Printf("%s -u <URL> <Cookie1=Value1> <Cookie2=Value2> ... \n", os.Args[0])
 	fmt.Println("Info: Cookie must be set in 'Name=Value' format")
 	os.Exit(1)
+}
+
+func filter(in chan string, out chan string) {
+	for v := range in {
+		if !visited[v] {
+			visited[v] = true
+			out <- v
+		}
+	}
 }
 
 func fetch(u string, cola chan string, cookies []string) {
