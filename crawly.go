@@ -4,6 +4,7 @@ package main
 - Exportar los resultados navegados a un fichero
 - Exportar los resultados erroneos a un fichero
 - Timeout de búsqueda
+- Herramienta para extraer solo las etiquetas href
 */
 import (
 	"crypto/tls"
@@ -22,8 +23,6 @@ import (
 // Flags globales
 var url = flag.String("u", "", "URL to crawl")
 
-//var cookies = flag.String("c", "", "Cookies")
-
 // Diccionario donde almacenamos las urls visitadas
 var visited = make(map[string]bool)
 
@@ -34,7 +33,9 @@ func main() {
 	// Banner
 	banner()
 
-	// Argumentos iniciales
+    // Indicamos que con -h se muestre nuestro metodo de ayuda
+	flag.Usage = usage
+    // Argumentos iniciales
 	flag.Parse()
 	if *url == "" {
 		//flag.PrintDefaults()
@@ -44,16 +45,23 @@ func main() {
 
 	// Diccionario de cookies
 	var cookie_jar = flag.Args()
+	// Comprobamos si hay cookies
+	if len(cookie_jar) != 0 {
+		fmt.Println("Cookies:")
+		for i := range cookie_jar {
+			fmt.Printf("- %s\n", cookie_jar[i])
+		}
+	}
 
 	/* Creamos el canal de comunicación con las gorutinas
 	   que va a ser una cola donde especificamos las urls */
-	cola := make(chan string)
-	colaFiltrada := make(chan string)
-
-	go filter(cola, colaFiltrada)
+	queue := make(chan string)
+	queue_fil := make(chan string)
 
 	// Introducimos el elemento en la cola
-	go func() { cola <- *url }()
+	go func() { queue <- *url }()
+	// Revisamos los elementos de la cola
+	go filter(queue, queue_fil)
 
 	// Canal bool para sincronizar la ejecución de N crawlers concurrentes
 	done := make(chan bool)
@@ -63,22 +71,14 @@ func main() {
 		go func() {
 			/* Recorremos la cola para ver sus elementos
 			   y los incluimos para que sean encolados */
-			for uri := range colaFiltrada {
-				fetch(uri, cola, cookie_jar)
+			for uri := range queue_fil {
+				fetch(uri, queue, cookie_jar)
 			}
 			done <- true
 		}()
 	}
 	<-done
 }
-
-/* Recorremos la cola para ver sus elementos
-   y los incluimos para que sean encolados */
-/*	for uri := range cola {
-		fetch(uri, cola, cookie_jar)
-	}
-	fmt.Printf("%v\n", visited)
-*/
 
 func timestamp() {
 	fmt.Printf("Date: %s", time.Now().Format("02.01.2006 15:04:05\n"))
@@ -107,16 +107,16 @@ func filter(in chan string, out chan string) {
 	}
 }
 
-func fetch(u string, cola chan string, cookies []string) {
+func fetch(u string, queue chan string, cookies []string) {
 	// Deshabilitamos la validación SSL
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
-	}
 	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 	}
+
 	// Creamos el client HTTP
-	client := &http.Client{Transport: transport}
+	client := http.Client{Transport: transport}
 	// Creamos la petición GET
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
@@ -125,12 +125,10 @@ func fetch(u string, cola chan string, cookies []string) {
 
 	// Comprobamos si hay cookies
 	if len(cookies) != 0 {
-		fmt.Println("Cookies:")
 		for i := range cookies {
 			s := strings.Split(cookies[i], "=")
 			c_i := http.Cookie{Name: s[0], Value: s[1]}
 			req.AddCookie(&c_i)
-			fmt.Printf("- %s\n", cookies[i])
 		}
 	}
 
@@ -138,13 +136,10 @@ func fetch(u string, cola chan string, cookies []string) {
 	resp, err := client.Do(req)
 	fmt.Println("Fetching: ", u)
 
-	// Indicamos que la URL ha sido visitada
-	visited[u] = true
-
 	if err != nil {
 		fmt.Printf("There was an error reading the answer\n")
-		// revisar si esto deberia ir aqui
 		not_visited = append(not_visited, u)
+		//fmt.Printf("%v\n", not_visited)
 		return
 	}
 
@@ -162,14 +157,12 @@ func fetch(u string, cola chan string, cookies []string) {
 	for _, l := range links {
 		abs := fixUrl(l, u)
 		if u != "" {
-			// Si no ha sido visitada
-			if !visited[abs] {
-				// Metemos la uri en la cola
-				go func() { cola <- abs }()
-			}
+			// Metemos la uri en la cola
+			go func() { queue <- abs }()
 		}
 	}
 }
+
 func parse(body []byte) (res_u []string) {
 	// Expresion regular para sacar las etiquetas href
 	re := regexp.MustCompile(`href="http[^ ]*"`)
