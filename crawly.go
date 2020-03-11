@@ -4,7 +4,6 @@ package main
 - Exportar los resultados navegados a un fichero
 - Exportar los resultados erroneos a un fichero
 - Herramienta para extraer solo las etiquetas href
-- Incluir timeout para las peticiones
 - Incluir opcion para cabeceras por si se necesita un "Authentication Basic"
 */
 import (
