@@ -3,8 +3,9 @@ package main
 /* TO-DO
 - Exportar los resultados navegados a un fichero
 - Exportar los resultados erroneos a un fichero
-- Timeout de búsqueda
 - Herramienta para extraer solo las etiquetas href
+- Incluir timeout para las peticiones
+- Incluir opcion para cabeceras por si se necesita un "Authentication Basic"
 */
 import (
 	"crypto/tls"
@@ -33,9 +34,9 @@ func main() {
 	// Banner
 	banner()
 
-    // Indicamos que con -h se muestre nuestro metodo de ayuda
+	// Indicamos que con -h se muestre nuestro metodo de ayuda
 	flag.Usage = usage
-    // Argumentos iniciales
+	// Argumentos iniciales
 	flag.Parse()
 	if *url == "" {
 		//flag.PrintDefaults()
@@ -116,7 +117,7 @@ func fetch(u string, queue chan string, cookies []string) {
 	}
 
 	// Creamos el client HTTP
-	client := http.Client{Transport: transport}
+	client := &http.Client{Transport: transport, Timeout: time.Second * 10}
 	// Creamos la petición GET
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
