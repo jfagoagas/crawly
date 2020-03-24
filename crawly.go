@@ -1,16 +1,15 @@
 package main
 
 /* TO-DO
-- Exportar los resultados navegados a un fichero
-- Exportar los resultados erroneos a un fichero
 - Herramienta para extraer solo las etiquetas href
-- Incluir opcion para cabeceras por si se necesita un "Authentication Basic"
+- Pasar las cookies y cabeceras por fichero, no por línea
 */
 import (
 	"crypto/tls"
 	"flag"
 	"fmt"
 	//	"io/ioutil"
+	b64 "encoding/base64"
 	"github.com/jackdanger/collectlinks"
 	"net/http"
 	nu "net/url"
@@ -21,7 +20,10 @@ import (
 )
 
 // Flags globales
-var url = flag.String("u", "", "URL to crawl")
+var (
+	url    = flag.String("u", "", "URL to crawl")
+	auth_h = flag.String("h", "", "Authorization Basic Header")
+)
 
 // Diccionario donde almacenamos las urls visitadas
 var visited = make(map[string]bool)
@@ -93,7 +95,7 @@ func banner() {
 func usage() {
 	fmt.Printf("\nERROR - Must complete all input params\n")
 	fmt.Printf("\nUsage mode:\n")
-	fmt.Printf("%s -u <URL> <Cookie1=Value1> <Cookie2=Value2> ... \n", os.Args[0])
+	fmt.Printf("%s -u <URL> -h <Auth Header> <Cookie1=Value1> <Cookie2=Value2> ... \n", os.Args[0])
 	fmt.Println("Info: Cookie must be set in 'Name=Value' format")
 	os.Exit(1)
 }
@@ -123,6 +125,12 @@ func fetch(u string, queue chan string, cookies []string) {
 		fmt.Sprint(err)
 	}
 
+	// Comprobamos si existe una cabecera de autorizacion
+	if *auth_h != "" {
+		auth_enc := b64.StdEncoding.EncodeToString([]byte(*auth_h))
+		req.Header.Add("Authorization:", "Basic "+auth_enc)
+	}
+
 	// Comprobamos si hay cookies
 	if len(cookies) != 0 {
 		for i := range cookies {
@@ -150,7 +158,7 @@ func fetch(u string, queue chan string, cookies []string) {
 	// body, _ := ioutil.ReadAll(resp.Body)
 	//fmt.Printf(string(body))
 
-	// Parseamos los resultados para volver a revisarlos a incluirlos en el listado
+	// Parseamos los resultados para volver a revisarlos e incluirlos en el listado
 	//links := parse(body)
 	links := collectlinks.All(resp.Body)
 	//Recorremos el listado de resultados y encolamos las nuevas urls
