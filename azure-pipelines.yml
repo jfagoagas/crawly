@@ -37,3 +37,27 @@ steps:
     go build -v .
   workingDirectory: '$(modulePath)'
   displayName: 'Get dependencies, then build'
+
+- script: |
+    gofmt -w .
+  workingDirectory: '$(modulePath)'
+  displayName: 'Go vet'
+
+- script: |
+    go vet .
+  workingDirectory: '$(modulePath)'
+  displayName: 'Go vet'
+
+- script: |
+    curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $GOPATH/bin latest 
+  workingDirectory: '$(modulePath)'
+  displayName: 'Get gosec tool'
+
+- script: |
+    gosec .
+  workingDirectory: '$(modulePath)'
+  displayName: 'Go sec'
+
+
+
+
