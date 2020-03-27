@@ -3,6 +3,7 @@ package main
 /* TO-DO
 - Herramienta para extraer solo las etiquetas href
 - Pasar las cookies y cabeceras por fichero, no por línea
+- Revisar las href --> javascript(0)
 */
 import (
 	"crypto/tls"
@@ -122,7 +123,7 @@ func fetch(u string, queue chan string, cookies []string) {
 	// Creamos la petición GET
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
-		fmt.Sprint(err)
+		fmt.Println(err)
 	}
 
 	// Comprobamos si existe una cabecera de autorizacion
