@@ -54,7 +54,7 @@ steps:
   displayName: 'Get gosec tool'
 
 - script: |
-    gosec . -exclude G402
+    gosec -exclude G402 .
   workingDirectory: '$(modulePath)'
   displayName: 'Go sec'
 
