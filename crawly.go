@@ -38,12 +38,14 @@ func main() {
 
 	// Indicamos que con -h se muestre nuestro metodo de ayuda
 	flag.Usage = usage
+
 	// Argumentos iniciales
 	flag.Parse()
 	if *url == "" {
 		//flag.PrintDefaults()
 		usage()
 	}
+    // Fecha y hora de la ejecución
 	timestamp()
 
 	// Diccionario de cookies
