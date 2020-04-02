@@ -41,7 +41,7 @@ steps:
 - script: |
     gofmt -w .
   workingDirectory: '$(modulePath)'
-  displayName: 'Go vet'
+  displayName: 'Go fmt'
 
 - script: |
     go vet .
@@ -54,7 +54,7 @@ steps:
   displayName: 'Get gosec tool'
 
 - script: |
-    gosec .
+    gosec . -exclude G402
   workingDirectory: '$(modulePath)'
   displayName: 'Go sec'
 
