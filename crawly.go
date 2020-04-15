@@ -1,4 +1,5 @@
 package main
+
 /* TO-DO
 - Herramienta para extraer solo las etiquetas href
 - Pasar las cookies y cabeceras por fichero, no por línea
@@ -15,21 +16,23 @@ import (
 	nu "net/url"
 	"os"
 	"regexp"
+    "runtime"
 	"strings"
 	"time"
 )
 
 // Flags globales
 var (
-	url    = flag.String("u", "", "URL to crawl")
-	auth_h = flag.String("h", "", "Authorization Basic Header")
+	url   = flag.String("u", "", "URL to crawl")
+	authH = flag.String("h", "", "Authorization Basic Header")
+	t     = flag.Int("t", 0, "Number of threads. (Default: number of cores available)")
 )
 
 // Diccionario donde almacenamos las urls visitadas
 var visited = make(map[string]bool)
 
 // Diccionario donde almacenamos las urls erroneas
-var not_visited = make([]string, 0)
+var notVisited = make([]string, 0)
 
 func main() {
 	// Banner
@@ -48,24 +51,29 @@ func main() {
 	timestamp()
 
 	// Diccionario de cookies
-	var cookie_jar = flag.Args()
+	var cookieJar = flag.Args()
 	// Comprobamos si hay cookies
-	if len(cookie_jar) != 0 {
+	if len(cookieJar) != 0 {
 		fmt.Println("Cookies:")
-		for i := range cookie_jar {
-			fmt.Printf("- %s\n", cookie_jar[i])
+		for i := range cookieJar {
+			fmt.Printf("- %s\n", cookieJar[i])
 		}
+	}
+
+	// Set number of concurrent threads
+	if *t > 0 {
+		runtime.GOMAXPROCS(*t)
 	}
 
 	/* Creamos el canal de comunicación con las gorutinas
 	   que va a ser una cola donde especificamos las urls */
 	queue := make(chan string)
-	queue_fil := make(chan string)
+	queueFil := make(chan string)
 
 	// Introducimos el elemento en la cola
 	go func() { queue <- *url }()
 	// Revisamos los elementos de la cola
-	go filter(queue, queue_fil)
+	go filter(queue, queueFil)
 
 	// Canal bool para sincronizar la ejecución de N crawlers concurrentes
 	done := make(chan bool)
@@ -75,8 +83,8 @@ func main() {
 		go func() {
 			/* Recorremos la cola para ver sus elementos
 			   y los incluimos para que sean encolados */
-			for uri := range queue_fil {
-				fetch(uri, queue, cookie_jar)
+			for uri := range queueFil {
+				fetch(uri, queue, cookieJar)
 			}
 			done <- true
 		}()
@@ -128,17 +136,17 @@ func fetch(u string, queue chan string, cookies []string) {
 	}
 
 	// Comprobamos si existe una cabecera de autorizacion
-	if *auth_h != "" {
-		auth_enc := b64.StdEncoding.EncodeToString([]byte(*auth_h))
-		req.Header.Add("Authorization:", "Basic "+auth_enc)
+	if *authH != "" {
+		authEnc := b64.StdEncoding.EncodeToString([]byte(*authH))
+		req.Header.Add("Authorization:", "Basic "+authEnc)
 	}
 
 	// Comprobamos si hay cookies
 	if len(cookies) != 0 {
 		for i := range cookies {
 			s := strings.Split(cookies[i], "=")
-			c_i := http.Cookie{Name: s[0], Value: s[1]}
-			req.AddCookie(&c_i)
+			cI := http.Cookie{Name: s[0], Value: s[1]}
+			req.AddCookie(&cI)
 		}
 	}
 
@@ -148,8 +156,8 @@ func fetch(u string, queue chan string, cookies []string) {
 
 	if err != nil {
 		fmt.Printf("There was an error reading the answer\n")
-		not_visited = append(not_visited, u)
-		//fmt.Printf("%v\n", not_visited)
+		notVisited = append(notVisited, u)
+		//fmt.Printf("%v\n", notVisited)
 		return
 	}
 
@@ -165,7 +173,7 @@ func fetch(u string, queue chan string, cookies []string) {
 	links := collectlinks.All(resp.Body)
 	//Recorremos el listado de resultados y encolamos las nuevas urls
 	for _, l := range links {
-		abs := fixUrl(l, u)
+		abs := fixURL(l, u)
 		if u != "" {
 			// Metemos la uri en la cola
 			go func() { queue <- abs }()
@@ -173,7 +181,7 @@ func fetch(u string, queue chan string, cookies []string) {
 	}
 }
 
-func parse(body []byte) (res_u []string) {
+func parse(body []byte) (resU []string) {
 	// Expresion regular para sacar las etiquetas href
 	re := regexp.MustCompile(`href="http[^ ]*"`)
 	// Ejecutamos la expresion regular
@@ -186,22 +194,22 @@ func parse(body []byte) (res_u []string) {
 		res = strings.Replace(res, "\"", "", -1)
 		//fmt.Printf("%q\n", match[i])
 		//fmt.Println(res)
-		res_u = append(res_u, res)
+		resU = append(resU, res)
 	}
 	return
 }
 
 // Metodo para resolver las ulrs relativas que se encuentran
-func fixUrl(href, base string) string {
+func fixURL(href, base string) string {
 	uri, err := nu.Parse(href)
 	if err != nil {
 		// Si no se consigue parsear se devuelve vacío
 		return ""
 	}
-	baseUrl, err := nu.Parse(base)
+	baseURL, err := nu.Parse(base)
 	if err != nil {
 		return ""
 	}
-	uri = baseUrl.ResolveReference(uri)
+	uri = baseURL.ResolveReference(uri)
 	return uri.String()
 }
