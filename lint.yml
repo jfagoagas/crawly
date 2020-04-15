@@ -76,7 +76,7 @@ steps:
   workingDirectory: '$(modulePath)'
   displayName: 'Run staticcheck'
 
-  - script: |
+- script: |
     errcheck ./... 
   workingDirectory: '$(modulePath)'
   displayName: 'Run errcheck'
