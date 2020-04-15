@@ -43,7 +43,8 @@ steps:
 
 - script: |
     golintout="$(gofmt -s -l .)";
-    if [ -n "$golintout" ]; then
+    if [ -n "$golintout" ]; 
+    then
       awk '{ print $0": format check failed" }' <<< $golintout
       exit 1
     fi
