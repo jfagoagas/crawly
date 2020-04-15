@@ -28,12 +28,12 @@ jobs:
 
       - name: Add Go bin dir to PATH
         run: echo "::add-path::$(go env GOPATH)/bin"
+      
+      - name: Get Go dependencies
+        run: go get
 
       - name: Install tools
         run: go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow golang.org/x/lint/golint honnef.co/go/tools/cmd/staticcheck github.com/kisielk/errcheck github.com/securego/gosec/cmd/gosec
-
-      - name: Get Go dependencies
-        run: go get
 
       - name: Run gofmt
         if: always()
@@ -57,13 +57,13 @@ jobs:
         if: always()
         run: golint -set_exit_status ./...
 
-      - name: Run staticcheck
-        if: always()
-        run: staticcheck ./...
+#      - name: Run staticcheck
+#        if: always()
+#        run: staticcheck ./...
 
-      - name: Run errcheck
-        if: always()
-        run: errcheck ./...
+#      - name: Run errcheck
+#        if: always()
+#        run: errcheck ./...
 
       - name: Run gosec
         if: always()
