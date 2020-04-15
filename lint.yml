@@ -39,17 +39,16 @@ steps:
   displayName: 'Get dependencies, then build'
 
 - script: |
-  go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow golang.org/x/lint/golint honnef.co/go/tools/cmd/staticcheck github.com/kisielk/errcheck github.com/securego/gosec/cmd/gosec
-  
+    go get -u golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow golang.org/x/lint/golint honnef.co/go/tools/cmd/staticcheck github.com/kisielk/errcheck github.com/securego/gosec/cmd/gosec
   workingDirectory: '$(modulePath)'
   displayName: 'Install tools'
 
 - script: |
-  golintout="$(gofmt -s -l .)";
-  if [ -n "$golintout" ]; then
-    awk '{ print $0": format check failed" }' <<< $golintout
-    exit 1
-  fi
+    golintout="$(gofmt -s -l .)";
+    if [ -n "$golintout" ]; then
+      awk '{ print $0": format check failed" }' <<< $golintout
+      exit 1
+    fi
   workingDirectory: '$(modulePath)'
   displayName: 'Run gofmt'
 
