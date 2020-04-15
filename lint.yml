@@ -41,6 +41,50 @@ steps:
   workingDirectory: '$(modulePath)'
   displayName: 'Install tools'
 
+- script: |
+    golintout="$(gofmt -s -l .)";
+    if [ -n "$golintout" ]; 
+    then
+      awk '{ print $0": format check failed" }' <<< $golintout
+      exit 1
+    fi
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run gofmt'
+
+- script: |
+    go vet 
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run go vet'
+
+- script: |
+    go vet -vettool $(which shadow)
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run go vet -vettool shadow'
+
+- script: |
+    #curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $GOPATH/bin latest 
+  workingDirectory: '$(modulePath)'
+  displayName: 'Get gosec tool'
+
+- script: |
+    golint -set_exit_status ./...
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run golint'
+
+  - script: |
+    staticcheck ./...
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run staticcheck'
+
+  - script: |
+    errcheck ./... 
+  workingDirectory: '$(modulePath)'
+  displayName: 'Run errcheck'
+
+- script: |
+    gosec -exclude G402 -quiet -fmt=golint ./... 
+  workingDirectory: '$(modulePath)'
+  displayName: 'Go sec'
 
 
 
