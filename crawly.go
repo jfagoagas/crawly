@@ -45,7 +45,7 @@ func main() {
 		//flag.PrintDefaults()
 		usage()
 	}
-    // Fecha y hora de la ejecución
+	// Fecha y hora de la ejecución
 	timestamp()
 
 	// Diccionario de cookies
