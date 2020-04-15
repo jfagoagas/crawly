@@ -71,7 +71,7 @@ steps:
   workingDirectory: '$(modulePath)'
   displayName: 'Run golint'
 
-  - script: |
+- script: |
     staticcheck ./...
   workingDirectory: '$(modulePath)'
   displayName: 'Run staticcheck'
