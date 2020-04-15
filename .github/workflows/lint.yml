@@ -38,7 +38,7 @@ jobs:
       - name: Run gofmt
         if: always()
         run: |
-          golintout="$(gofmt -s -l .)";
+          #golintout="$(gofmt -s -l .)";
           if [ -n "$golintout" ]; then
             awk '{ print $0": format check failed" }' <<< $golintout
             exit 1
