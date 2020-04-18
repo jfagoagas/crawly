@@ -16,7 +16,7 @@ import (
 	nu "net/url"
 	"os"
 	"regexp"
-    "runtime"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -105,7 +105,7 @@ func banner() {
 func usage() {
 	fmt.Printf("\nERROR - Must complete all input params\n")
 	fmt.Printf("\nUsage mode:\n")
-	fmt.Printf("%s -u <URL> -h <Auth Header> <Cookie1=Value1> <Cookie2=Value2> ... \n", os.Args[0])
+	fmt.Printf("%s -u <URL> -h <Auth Header> -t <Number of threads> <Cookie1=Value1> <Cookie2=Value2> ... \n", os.Args[0])
 	fmt.Println("Info: Cookie must be set in 'Name=Value' format")
 	os.Exit(1)
 }
