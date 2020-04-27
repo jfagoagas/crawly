@@ -12,6 +12,7 @@ import (
 	//	"io/ioutil"
 	b64 "encoding/base64"
 	"github.com/jackdanger/collectlinks"
+	"log"
 	"net/http"
 	nu "net/url"
 	"os"
@@ -26,6 +27,7 @@ var (
 	url   = flag.String("u", "", "URL to crawl")
 	authH = flag.String("h", "", "Authorization Basic Header")
 	t     = flag.Int("t", 0, "Number of threads. (Default: number of cores available)")
+	l     = flag.String("l", "", "Logfile name")
 )
 
 // Diccionario donde almacenamos las urls visitadas
@@ -49,6 +51,17 @@ func main() {
 	}
 	// Fecha y hora de la ejecución
 	timestamp()
+
+	// New logfile with name "date_url.log"
+	f, err := os.OpenFile(*l, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+
+	// New logger
+	logger := log.New(f, "", log.LstdFlags)
+    logger.Printf("Crawling:  %s", *url)
 
 	// Diccionario de cookies
 	var cookieJar = flag.Args()
@@ -84,7 +97,7 @@ func main() {
 			/* Recorremos la cola para ver sus elementos
 			   y los incluimos para que sean encolados */
 			for uri := range queueFil {
-				fetch(uri, queue, cookieJar)
+				fetch(uri, queue, cookieJar, logger)
 			}
 			done <- true
 		}()
@@ -93,7 +106,7 @@ func main() {
 }
 
 func timestamp() {
-	fmt.Printf("Date: %s", time.Now().Format("02.01.2006 15:04:05\n"))
+	fmt.Printf("Date: %s\n", time.Now().Format("02.01.2006 15:04:05\n"))
 }
 
 func banner() {
@@ -103,9 +116,9 @@ func banner() {
 }
 
 func usage() {
-	fmt.Printf("\nERROR - Must complete all input params\n")
+	fmt.Printf("\nERROR - Must complete, at least, <URL> and <Log File> input params\n")
 	fmt.Printf("\nUsage mode:\n")
-	fmt.Printf("%s -u <URL> -h <Auth Header> -t <Number of threads> <Cookie1=Value1> <Cookie2=Value2> ... \n", os.Args[0])
+	fmt.Printf("%s -u <URL> -l <Log File> -h <Auth Header> -t <Number of threads> <Cookie1=Value1> <Cookie2=Value2> ... \n", os.Args[0])
 	fmt.Println("Info: Cookie must be set in 'Name=Value' format")
 	os.Exit(1)
 }
@@ -119,7 +132,7 @@ func filter(in chan string, out chan string) {
 	}
 }
 
-func fetch(u string, queue chan string, cookies []string) {
+func fetch(u string, queue chan string, cookies []string, logger *log.Logger) {
 	// Deshabilitamos la validación SSL
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -152,10 +165,12 @@ func fetch(u string, queue chan string, cookies []string) {
 
 	// Lanzamos la peticion
 	resp, err := client.Do(req)
-	fmt.Println("Fetching: ", u)
+	// Guardamos la respuesta en el fichero de log
+	log.Println("Fetching: ", u)
+	logger.Println("Fetching: ", u)
 
 	if err != nil {
-		fmt.Printf("There was an error reading the answer\n")
+		log.Printf("There was an error reading the answer\n")
 		notVisited = append(notVisited, u)
 		//fmt.Printf("%v\n", notVisited)
 		return
