@@ -26,8 +26,8 @@ import (
 var (
 	url   = flag.String("u", "", "URL to crawl")
 	authH = flag.String("h", "", "Authorization Basic Header")
-	t     = flag.Int("t", 0, "Number of threads. (Default: number of cores available)")
-	l     = flag.String("l", "", "Logfile name")
+	th    = flag.Int("t", 0, "Number of threads. (Default: number of cores available)")
+	logF  = flag.String("l", "", "Logfile name")
 )
 
 // Diccionario donde almacenamos las urls visitadas
@@ -45,7 +45,7 @@ func main() {
 
 	// Argumentos iniciales
 	flag.Parse()
-	if *url == "" {
+	if *url == "" || *logF == "" {
 		//flag.PrintDefaults()
 		usage()
 	}
@@ -53,7 +53,7 @@ func main() {
 	timestamp()
 
 	// New logfile with name "date_url.log"
-	f, err := os.OpenFile(*l, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(*logF, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
 	}
@@ -61,7 +61,7 @@ func main() {
 
 	// New logger
 	logger := log.New(f, "", log.LstdFlags)
-    logger.Printf("Crawling:  %s", *url)
+	logger.Printf("Crawling:  %s", *url)
 
 	// Diccionario de cookies
 	var cookieJar = flag.Args()
@@ -74,8 +74,8 @@ func main() {
 	}
 
 	// Set number of concurrent threads
-	if *t > 0 {
-		runtime.GOMAXPROCS(*t)
+	if *th > 0 {
+		runtime.GOMAXPROCS(*th)
 	}
 
 	/* Creamos el canal de comunicación con las gorutinas
