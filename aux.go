@@ -40,7 +40,7 @@ func setWorkers(threadNumber *int) {
 	}
 }
 
-// Extract
+// Extract hrefs
 func parse(body []byte) (result []string) {
 	re := regexp.MustCompile(`href="http[^ ]*"`)
 	match := re.FindAll(body, -1)
@@ -53,7 +53,7 @@ func parse(body []byte) (result []string) {
 	return
 }
 
-// Metodo para resolver las ulrs relativas que se encuentran
+// Resolve relative URIs
 func fixURL(href, base string) string {
 	uri, err := nu.Parse(href)
 	if err != nil {
